@@ -34,8 +34,7 @@ export const albums: Album[] = [
       { "url": "/images/road-14.jpg", "caption": "" },
       { "url": "/images/road-15.jpg", "caption": "" },
       { "url": "/images/road-16.jpg", "caption": "" },
-      { "url": "/images/road-17.jpg", "caption": "" },
-      { "url": "/images/road-18.jpg", "caption": "" }
+      { "url": "/images/road-17.jpg", "caption": "" }
     ]
   }
 ];
