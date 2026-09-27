@@ -30,8 +30,12 @@ export const siteConfig = {
   // 5. 首页照片墙预览图
   photoWallImage: "/images/photowall.svg",
 
-  // 6. 网易云音乐歌单 ID。留空数组 [] 时音乐页会提示“请配置 cloudMusicIds”
-  cloudMusicIds: [],
+  // 6. 网易云歌曲 ID 列表（注意是「单曲 ID」，不是歌单 ID）
+  //    怎么拿 ID：打开 https://music.163.com 搜到歌 → 点进歌曲页，
+  //    网址里 song?id= 后面那串数字就是，例如 .../song?id=1859390262
+  //    改完要跑一次 node scripts/fetch-music.mjs 重新生成 public/music-data.json
+  //    留空数组 [] 时音乐页会提示"请配置 cloudMusicIds"
+  cloudMusicIds: ["1809646618", "3361076230", "1859390262"],
 
   // 社交图标。文章页底部和首页个人卡片共用这一组。
   // 每个都是「点一下复制」，不跳转。值为空的按钮自动不显示。

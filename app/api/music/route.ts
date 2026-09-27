@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 const NET_EASE_HEADERS = {
   'User-Agent':
@@ -30,13 +30,14 @@ export async function GET(request: NextRequest) {
     songIds.map(async (songId): Promise<SongResult> => {
       try {
         const [detailRes, lrcRes] = await Promise.all([
+          // ⚠️ 这个接口多带一个 id= 参数会返回空响应，必须只用 ids=[...]
           fetch(
-            `https://music.163.com/api/song/detail/?id=${songId}&ids=[${songId}]`,
-            { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(6000) },
+            `https://music.163.com/api/song/detail?ids=%5B${songId}%5D`,
+            { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(10000) },
           ),
           fetch(
             `https://music.163.com/api/song/lyric?id=${songId}&lv=-1&kv=-1&tv=-1`,
-            { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(6000) },
+            { headers: NET_EASE_HEADERS, signal: AbortSignal.timeout(10000) },
           ).catch(() => null),
         ])
 

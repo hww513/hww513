@@ -84,8 +84,24 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     const fetchMusicData = async () => {
       try {
-        const res = await fetch(`/api/music?ids=${siteConfig.cloudMusicIds.join(',')}`);
-        const rawResults = await res.json();
+        // 🌟 优先读构建时烘焙好的静态数据（public/music-data.json）。
+        // GitHub Pages 这类纯静态托管没有 /api/music 路由，只能走这个。
+        let rawResults: any[] | null = null;
+        try {
+          const staticRes = await fetch('/music-data.json', { cache: 'no-cache' });
+          if (staticRes.ok) {
+            const data = await staticRes.json();
+            if (Array.isArray(data) && data.length > 0) rawResults = data;
+          }
+        } catch {
+          /* 静态数据不存在，走下面的 API */
+        }
+
+        // 静态数据没有或为空时，回退到服务端 API（Vercel 版有）
+        if (!rawResults) {
+          const res = await fetch(`/api/music?ids=${siteConfig.cloudMusicIds.join(',')}`);
+          rawResults = await res.json();
+        }
 
         const mergedPlaylist = rawResults
           .filter((song: any) => song && song.url && !song.error)
@@ -93,7 +109,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
             id: song.id || Math.random().toString(),
             title: song.name || '未知歌曲',
             artist: song.artist || song.author || '未知歌手',
-            cover: song.cover || song.pic || 'https://bu.dusays.com/2026/03/24/69c24230a5ff8.jpg',
+            cover: song.cover || song.pic || '/images/cover-default.svg',
             src: song.url,
             lrcUrl: null,
             lyrics: song.lrc ? parseLrc(song.lrc) : []
