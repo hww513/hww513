@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import PageTransition from '../../components/PageTransition';
 import { albums, Album } from '../../data/albums';
+import { preloadImage, preloadInIdle, preloadNow } from '../../components/preloadImages';
 
 export default function PhotoWallClient() {
   const [currentAlbum, setCurrentAlbum] = useState<Album | null>(null);
@@ -23,6 +24,23 @@ export default function PhotoWallClient() {
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // ── 图片预加载 ──────────────────────────────────────────
+  // 1) 相册封面 + 三张堆叠图是首屏可见的，立即加载
+  // 2) 其余照片在浏览器空闲时逐张灌进缓存，
+  //    点进相册、打开大图时就是瞬间显示，不再一张张「跳」出来
+  useEffect(() => {
+    preloadNow(
+      albums.flatMap((album) => [
+        album.cover,
+        album.photos[0]?.url,
+        album.photos[1]?.url,
+        album.photos[2]?.url,
+      ])
+    );
+
+    return preloadInIdle(albums.flatMap((album) => album.photos.map((p) => p.url)));
+  }, []);
 
   const { matchedAlbums, matchedPhotos } = useMemo(() => {
     if (!activeQuery) return { matchedAlbums: albums, matchedPhotos: [] };
@@ -81,6 +99,7 @@ export default function PhotoWallClient() {
                         <div
                           key={`search-photo-${index}`}
                           onClick={() => setSelectedImage(photo)}
+                          onMouseEnter={() => preloadImage(photo.url)}
                           className="break-inside-avoid relative group rounded-2xl overflow-hidden cursor-zoom-in shadow-lg bg-white/20 dark:bg-slate-800/20 border border-white/30 dark:border-white/10 transition-transform duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20"
                         >
                           <img src={photo.url} alt={photo.caption} className="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105" loading="lazy" />
@@ -106,6 +125,7 @@ export default function PhotoWallClient() {
                     <div
                       key={album.id}
                       onClick={() => { setSearchQuery(''); setCurrentAlbum(album); }}
+                      onMouseEnter={() => preloadNow(album.photos.map((p) => p.url))}
                       className="group cursor-pointer flex flex-col items-center"
                     >
                       <div className="relative w-[85%] aspect-[4/3] mb-8">
@@ -175,6 +195,7 @@ export default function PhotoWallClient() {
                   <div
                     key={`${photo.url}-${index}`}
                     onClick={() => setSelectedImage(photo)}
+                    onMouseEnter={() => preloadImage(photo.url)}
                     className="break-inside-avoid relative group rounded-2xl overflow-hidden cursor-zoom-in shadow-lg bg-white/20 dark:bg-slate-800/20 border border-white/30 dark:border-white/10 transition-transform duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20 animate-fade-in-up"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
