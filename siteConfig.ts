@@ -3,7 +3,7 @@
 export const siteConfig = {
   // 1. 网站标题与博主信息
   title: "hww513的初醒屿",
-  faviconUrl: "/images/avatar.svg",
+  faviconUrl: "/images/avatar.jpg",
   authorName: "hww513",
   bio: "人生无处不青山",
 
@@ -15,7 +15,7 @@ export const siteConfig = {
   navAfter: "",
 
   // 2. 头像设置（图片放在 public/ 后写 "/images/xxx.svg"）
-  avatarUrl: "/images/avatar.svg",
+  avatarUrl: "/images/avatar.jpg",
 
   // 3. 网站背景设置（二选一）
   // 用渐变：把 useGradient 设为 true，走下面的 themeColors
@@ -35,7 +35,31 @@ export const siteConfig = {
   //    网址里 song?id= 后面那串数字就是，例如 .../song?id=1859390262
   //    改完要跑一次 node scripts/fetch-music.mjs 重新生成 public/music-data.json
   //    留空数组 [] 时音乐页会提示"请配置 cloudMusicIds"
-  cloudMusicIds: ["1809646618", "3361076230", "1859390262"],
+  //
+  //    走的是网易云公开外链接口，音频从网易云 CDN 流出，
+  //    本站不存放任何音频文件。
+  cloudMusicIds: [
+    "30431377",   // 绝对占有 相对自由 — 陈粒
+    "514765154",  // 世界上的另一个我 — 阿肆
+    "1916370539", // 逃避行 — imase
+    "25648006",   // 麦恩莉 — 方大同
+    "16232697",   // Because of You — Kelly Clarkson
+    "1294899297", // I Love You So — The Walters
+    "82360",      // Love Song — 方大同
+    "233888",     // 爱情讯息 — 郭静
+    "273114",     // 失眠 — Suki刘舒妤
+    "85571",      // 我们俩 — 郭顶
+    "1436117704", // 不说 (原来是不说) — 周公
+    "20110049",   // River Flows In You — Martin Ermen
+    "108640",     // 阴天 — 莫文蔚
+    "422104138",  // 后来的我们 — 五月天
+    "442869203",  // 保留 — 郭顶
+    "28718313",   // The Way I Still Love You — Reynard Silva
+    "441491828",  // 水星记 — 郭顶
+    "287241",     // 没关系 — 容祖儿
+    "1786869",    // So Sick — Ne-Yo
+    "82453",      // 爱爱爱 — 方大同
+  ],
 
   // 社交图标。文章页底部和首页个人卡片共用这一组。
   // 每个都是「点一下复制」，不跳转。值为空的按钮自动不显示。

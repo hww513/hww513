@@ -101,7 +101,13 @@ function scanLocalMusic() {
   });
 }
 
-async function fetchNetease(id) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * 取一首歌的详情 + 歌词。
+ * 网易云接口在高并发下会偶发 fetch failed，所以带 3 次重试。
+ */
+async function fetchNetease(id, attempt = 1) {
   try {
     // 注意：这个接口带多余的 id= 参数会返回空，必须只用 ids=[...]
     const [detailRes, lrcRes] = await Promise.all([
@@ -115,7 +121,13 @@ async function fetchNetease(id) {
       }).catch(() => null),
     ]);
 
-    if (!detailRes.ok) return { id, error: `detail HTTP ${detailRes.status}` };
+    if (!detailRes.ok) {
+      if (attempt < 3) {
+        await sleep(800 * attempt);
+        return fetchNetease(id, attempt + 1);
+      }
+      return { id, error: `detail HTTP ${detailRes.status}` };
+    }
     const detail = await detailRes.json();
     const song = detail.songs?.[0];
     if (!song) return { id, error: 'not_found' };
@@ -140,7 +152,39 @@ async function fetchNetease(id) {
       source: 'netease',
     };
   } catch (error) {
+    if (attempt < 3) {
+      await sleep(800 * attempt);
+      return fetchNetease(id, attempt + 1);
+    }
     return { id, error: String(error) };
+  }
+}
+
+/**
+ * 校验音频链接是否真的能播。
+ *
+ * 网易云的 free 外链接口对很多商业版权歌已经关闭：
+ * 请求会 302 到 music.163.com/404，返回 HTML 而不是音频。
+ * 这里实际拉一小段，检查有没有 MPEG 帧同步字，避免歌单里挂一堆放不出来的歌。
+ */
+async function verifyAudio(url) {
+  try {
+    const res = await fetch(url, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return false;
+
+    const buf = Buffer.from(await res.arrayBuffer());
+    // 至少要有点体积，且前几 KB 里能找到 MPEG 帧同步字（0xFFEx / 0xFFFx）
+    if (buf.length < 100 * 1024) return false;
+    const limit = Math.min(buf.length - 1, 8192);
+    for (let i = 0; i < limit; i++) {
+      if (buf[i] === 0xff && (buf[i + 1] & 0xe0) === 0xe0) return true;
+    }
+    return false;
+  } catch {
+    return false;
   }
 }
 
@@ -155,14 +199,27 @@ for (const s of local) {
 const ids = readSongIds();
 console.log(`[music] 网易云 ${ids.length} 首（siteConfig.cloudMusicIds）`);
 
-const neteaseResults = await Promise.all(ids.map(fetchNetease));
-const netease = neteaseResults.filter((r) => !r.error);
-for (const s of netease) {
-  console.log(`  ✅ ${s.name} — ${s.artist}${s.lrc ? '（含歌词）' : ''}`);
-}
+const neteaseResults = await Promise.all(ids.map((id) => fetchNetease(id)));
+const fetched = neteaseResults.filter((r) => !r.error);
 for (const s of neteaseResults.filter((r) => r.error)) {
-  console.log(`  ❌ ${s.id} 失败：${s.error}`);
+  console.log(`  ❌ ${s.id} 取详情失败：${s.error}`);
 }
+
+// 逐首校验能不能真播（串行 + 延时，避免被限流）
+console.log(`[music] 校验 ${fetched.length} 首的可播性...`);
+const netease = [];
+for (const song of fetched) {
+  const playable = await verifyAudio(song.url);
+  if (playable) {
+    netease.push(song);
+    console.log(`  ✅ ${song.name} — ${song.artist}${song.lrc ? '（含歌词）' : ''}`);
+  } else {
+    console.log(`  ⛔ ${song.name} — ${song.artist}（网易云已关闭此歌的免费外链）`);
+  }
+  await sleep(600);
+}
+
+const unplayable = fetched.length - netease.length;
 
 // 本地文件排前面
 const all = [...local, ...netease];
@@ -170,6 +227,9 @@ const all = [...local, ...netease];
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(all, null, 2) + '\n');
 console.log(`[music] 共 ${all.length} 首写入 public/music-data.json`);
+if (unplayable > 0) {
+  console.log(`[music] 另有 ${unplayable} 首因网易云关闭免费外链被剔除`);
+}
 
 if (all.length === 0) {
   console.log('[music] 歌单是空的：把音频文件放进 public/music/ 就会自动收录');
