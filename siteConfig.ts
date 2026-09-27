@@ -33,14 +33,16 @@ export const siteConfig = {
   // 6. 网易云音乐歌单 ID。留空数组 [] 时音乐页会提示“请配置 cloudMusicIds”
   cloudMusicIds: [],
 
+  // 社交图标。文章页底部和首页个人卡片共用这一组。
+  // 每个都是「点一下复制」，不跳转。值为空的按钮自动不显示。
+  // 顺序：GitHub → Gitee → 邮箱 → QQ → 微信
   social: {
-    github: "",
-    gitee: "",
-    google: "",
-    // 文章页那一栏的邮箱图标：点一下就把这个地址复制到剪贴板
+    github: "https://github.com/hww513",
+    gitee: "", // 留空 = 不显示。有 gitee 了就填地址，按钮会自动出现
+    google: "", // 已弃用，保持空
     email: "44550789@qq.com",
-    qq: "",
-    wechat: "",
+    qq: "44550789",
+    wechat: "fyh17607800052",
   },
   counts: {
     photos: 4, // 照片墙数量，可以手动写死或动态计算

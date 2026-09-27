@@ -2,42 +2,8 @@
 "use client";
 
 import { useState } from 'react';
-import { siteConfig } from '../siteConfig'; // 确保路径正确
-
-/**
- * 复制文本到剪贴板。
- * 优先用 Clipboard API；在 http://192.168.x.x 这类非安全上下文里
- * navigator.clipboard 是 undefined，所以保留 execCommand 兜底。
- */
-async function copyText(text: string): Promise<boolean> {
-  if (!text) return false;
-
-  try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    // 落到下面的兜底方案
-  }
-
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '-9999px';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    ta.setSelectionRange(0, text.length);
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
-}
+import { siteConfig } from '../siteConfig';
+import { copyText } from './copyText';
 
 // 这里我们整合了 SocialBtn 和 ClientSocials
 function SocialBtn({
@@ -122,9 +88,24 @@ export default function ClientSocials() {
 
   return (
     <div className="flex gap-2 flex-wrap justify-center mt-4">
-      {social?.github && <SocialBtn type="github" url={social.github} />}
-      {social?.gitee && <SocialBtn type="gitee" url={social.gitee} />}
-      {social?.google && <SocialBtn type="google" url={social.google} />}
+      {/* GitHub：点击复制地址（不再跳转） */}
+      {social?.github && (
+        <SocialBtn
+          type="github"
+          label={`复制 GitHub 地址：${social.github}`}
+          copied={copied === 'github'}
+          onClick={() => handleCopy(social.github, 'github')}
+        />
+      )}
+      {/* Gitee：同款，值留空时自动不显示 */}
+      {social?.gitee && (
+        <SocialBtn
+          type="gitee"
+          label={`复制 Gitee 地址：${social.gitee}`}
+          copied={copied === 'gitee'}
+          onClick={() => handleCopy(social.gitee, 'gitee')}
+        />
+      )}
       {social?.email && (
         <SocialBtn
           type="email"

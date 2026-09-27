@@ -1,16 +1,26 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { siteConfig } from '../siteConfig';
 import { useToast } from './ToastProvider';
+import { copyText } from './copyText';
 
 export default function ProfileCard({ postCount, chatterCount, photoCount }: { postCount: number, chatterCount: number, photoCount: number }) {
   const router = useRouter();
   const { showToast } = useToast();
+  const social = siteConfig.social;
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string, label: string, key: string) => {
+    if (!text) return;
+    const ok = await copyText(text);
+    if (!ok) return;
+    setCopied(key);
     showToast(`✨ ${label}已复制到剪贴板: ${text}`, 'success');
+    window.setTimeout(() => {
+      setCopied((current) => (current === key ? null : current));
+    }, 2000);
   };
 
   return (
@@ -48,12 +58,48 @@ export default function ProfileCard({ postCount, chatterCount, photoCount }: { p
         </div>
 
         <div className="flex gap-2 md:gap-3 flex-wrap justify-center md:justify-end w-full md:w-auto" onClick={(e) => e.stopPropagation()}>
-          <SocialBtn type="github" url={siteConfig.social?.github} />
-          <SocialBtn type="gitee" url={siteConfig.social?.gitee} />
-          <SocialBtn type="google" url={siteConfig.social?.google} />
-          <SocialBtn type="email" onClick={() => copyToClipboard(siteConfig.social?.email || '', '邮箱')} />
-          <SocialBtn type="qq" onClick={() => copyToClipboard(siteConfig.social?.qq || '', 'QQ号')} />
-          <SocialBtn type="wechat" onClick={() => copyToClipboard(siteConfig.social?.wechat || '', '微信号')} />
+          {/* GitHub：点击复制地址（不再跳转） */}
+          {social?.github && (
+            <SocialBtn
+              type="github"
+              label={`复制 GitHub 地址：${social.github}`}
+              copied={copied === 'github'}
+              onClick={() => copyToClipboard(social.github, 'GitHub 地址', 'github')}
+            />
+          )}
+          {/* Gitee：同款，值留空时自动不显示 */}
+          {social?.gitee && (
+            <SocialBtn
+              type="gitee"
+              label={`复制 Gitee 地址：${social.gitee}`}
+              copied={copied === 'gitee'}
+              onClick={() => copyToClipboard(social.gitee, 'Gitee 地址', 'gitee')}
+            />
+          )}
+          {social?.email && (
+            <SocialBtn
+              type="email"
+              label={`复制邮箱：${social.email}`}
+              copied={copied === 'email'}
+              onClick={() => copyToClipboard(social.email, '邮箱', 'email')}
+            />
+          )}
+          {social?.qq && (
+            <SocialBtn
+              type="qq"
+              label={`复制 QQ：${social.qq}`}
+              copied={copied === 'qq'}
+              onClick={() => copyToClipboard(social.qq, 'QQ号', 'qq')}
+            />
+          )}
+          {social?.wechat && (
+            <SocialBtn
+              type="wechat"
+              label={`复制微信：${social.wechat}`}
+              copied={copied === 'wechat'}
+              onClick={() => copyToClipboard(social.wechat, '微信号', 'wechat')}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -69,7 +115,7 @@ function StatItem({ count, label, color }: { count: number, label: string, color
   );
 }
 
-function SocialBtn({ type, url, onClick }: { type: string, url?: string, onClick?: () => void }) {
+function SocialBtn({ type, url, onClick, copied = false, label }: { type: string, url?: string, onClick?: () => void, copied?: boolean, label?: string }) {
   const getIcon = () => {
     switch (type) {
       case 'github': return <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>;
@@ -85,10 +131,38 @@ function SocialBtn({ type, url, onClick }: { type: string, url?: string, onClick
   const content = (
     <div
       onClick={onClick}
-      className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/50 dark:bg-slate-700/50 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all duration-300 border border-white/40 dark:border-white/10 shadow-sm"
-      title={type}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      aria-label={label ?? type}
+      className={`relative w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center border shadow-sm cursor-pointer transition-all duration-300 active:scale-90 ${
+        copied
+          ? 'bg-green-500 text-white border-green-400 scale-110 shadow-green-500/40 shadow-lg'
+          : 'bg-white/50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 border-white/40 dark:border-white/10 hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white hover:scale-110'
+      }`}
+      title={label ?? type}
     >
-      {getIcon()}
+      {copied ? (
+        <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        getIcon()
+      )}
+
+      {/* 复制成功后从图标上方浮出的提示气泡 */}
+      <span
+        className={`pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900/90 px-2 py-1 text-[10px] font-bold text-white shadow-lg transition-all duration-300 dark:bg-white/90 dark:text-slate-900 ${
+          copied ? 'opacity-100 -translate-y-1' : 'opacity-0 translate-y-1'
+        }`}
+      >
+        已复制
+      </span>
     </div>
   );
   return url ? <a href={url} target="_blank" rel="noopener noreferrer">{content}</a> : content;
