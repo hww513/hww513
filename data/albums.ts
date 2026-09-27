@@ -10,6 +10,7 @@ export const albums: Album[] = [
     "cover": "/images/album-cover-1.svg",
     "date": "2026.09",
     "photos": [
+      { "url": "/images/daily-01.jpg", "caption": "" },
       { "url": "/images/album-photo-1.svg", "caption": "傍晚" },
       { "url": "/images/album-photo-2.svg", "caption": "树影" }
     ]
