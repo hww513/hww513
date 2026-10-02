@@ -2,7 +2,7 @@
 title: "些许感慨"
 date: "2026-09-27 10:00:00"
 description: "对于宇宙、存在与人生的些许感慨。"
-cover: "/images/cover-default.svg"
+cover: "/images/cover-reflections.jpg"
 tags: ["随笔", "思考"]
 ---
 
