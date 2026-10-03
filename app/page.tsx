@@ -18,6 +18,7 @@ import { ToastProvider } from '../components/ToastProvider';
 import LatestPostsCarousel from '../components/LatestPostsCarousel';
 import LatestChatterCarousel from '../components/LatestChatterCarousel';
 import DanmakuBackground from '../components/DanmakuBackground';
+import GlobalSnow from '../components/GlobalSnow';
 
 function formatUpdateTime(dateString: string) {
   if (!dateString || dateString === '1970-01-01') return '刚刚更新';
@@ -90,6 +91,8 @@ export default function Home() {
 
   return (
     <ToastProvider>
+      {/* 全屏飘雪特效（只在首页） */}
+      <GlobalSnow always count={60} />
       <div className="min-h-screen relative pb-10">
         <Navbar />
         <PageTransition>
